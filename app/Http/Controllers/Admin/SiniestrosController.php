@@ -81,6 +81,7 @@ class SiniestrosController extends Controller
         $workshops = Workshop::where('name', '!=', '')
             ->select('name', 'id')
             ->get();
+
         $peritos = Personal::select('id', 'full_name')->get();
 
         return $dataTable->render('admin.siniestros.index', compact('datos', 'workshops', 'peritos'));
@@ -92,19 +93,20 @@ class SiniestrosController extends Controller
         $siniestroId = $request->input('siniestroId');
         $siniestro = Siniestro::find($siniestroId, ['id', 'FEC_ENTREGA_EST']);
         
-        $fechaAnterior = $siniestro->FEC_ENTREGA_EST;
+        $fechaActual = $siniestro->FEC_ENTREGA_EST;
         $tallerId = $request->input('taller');
         $nuevaFecha = $request->input('newDate');
         $comment = $request->input('comment');
-
+        
 
         $validator = Validator::make($request->all(), [
             'taller' => 'required',
-            'newDate' => "required|date|after:{$fechaAnterior}",
+            'newDate' => "required|date|after:{$fechaActual}",
 
         ], [
             'taller.required' => 'El campo debe ser requerido ',
             'newDate.required' => 'El campo debe ser requerido ',
+            'newDate.date' => 'El campo debe ser formato fecha ',
             'newDate.after' => 'La fecha nueva debe ser mayor que la fecha actual'
         ]);
     
@@ -112,26 +114,20 @@ class SiniestrosController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        
-        $siniestro->FEC_ENTREGA_EST = $nuevaFecha;
-        $siniestro->save();
-        if (!$siniestro) {
-            return response()->json(['error' => 'Siniestro no encontrado'], 404);
-        }
-        
 
         $bitacoraFecha = Bitacora_Fecha::create([ 
 
             'siniestro_id' => $siniestroId,
             'usuario_actualiza_id' => $tallerId,
-            'fecha_anterior' => $siniestro->FEC_ENTREGA_EST,
+            'fecha_anterior' => $fechaActual,
             'fecha_nueva' => $nuevaFecha,
-            'is_postponement' => null,
+            'is_postponement' => 0,
             'comment' => $comment,
             'confirmacion_taller' => 0,
             'fec_confirmacion' => null,
         ]);
 
+        $siniestro->update(['FEC_ENTREGA_EST' => $nuevaFecha]);
         return Response()->json($bitacoraFecha);
     }
 
@@ -144,6 +140,7 @@ class SiniestrosController extends Controller
         $datos = [
             'fecha_inicial' => $siniestro->FEC_ENTREGA_EST,
             'bitacora' => $bitacoraDatos,
+            'created_at' => $siniestro->create_function,
         ];
 
         return response()->json($datos);

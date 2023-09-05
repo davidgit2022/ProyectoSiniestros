@@ -62,7 +62,8 @@ class Siniestro extends Model
         "MCA_PAR",
         "P_DSCTO_PRONTO_PAGO",
         "TIPO_PERITACION",
-        "NOTIFICADO"
+        "NOTIFICADO",
+        'created_at'
     ];
 	
     public function getCreatedAtAttribute($date)

@@ -15,7 +15,7 @@
 
                     <div class="mb-3">
                         <label>Taller:</label>
-                        <select class="form-control" name="taller" id="taller_modal">
+                        <select class="form-control" name="taller_modal" id="taller_modal" autofocus">
                             <option value="">Seleccionar</option>
                             @foreach ($workshops as $workshop)
                                 <option value="{{ $workshop->id }}">{{ $workshop->name }}</option>

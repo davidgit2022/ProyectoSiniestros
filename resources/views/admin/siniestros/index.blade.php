@@ -49,11 +49,7 @@
                     <input type="date" class="form-control" name="fec_entresga_est" id="fec_entresga_est">
                 </div>
             </div>
-            <div class="row">
-                <div class="col-lg-12 mt-3">
-                    <a href="{{ route('admin.respuestas.export') }}" class="btn btn-success">Descargar</a>
-                </div>
-            </div>
+
             <div class="row">
                 <div class="col-lg-12 mt-3">
                     <table class="table" id="tabla-siniestros">
@@ -214,10 +210,23 @@
                 guardarDatos();
             });
 
+            $('#theModal').on('shown.bs.modal', function() {
+                $('#taller_modal').select2({
+                    placeholder: "Seleccionar taller",
+                    allowClear: true,
+                    dropdownParent: $('#theModal .modal-body')
+                });
+            });
+
         });
 
+        // Función showModal
+        function showModal(siniestroId) {
+            $('#siniestroId').val(siniestroId);
+            $('#theModal').modal('show');
+        }
+
         function showErrors(errors) {
-            // Primero, oculta todos los mensajes de error
             $('.error-message').hide();
 
             for (let field in errors) {
@@ -229,14 +238,11 @@
 
 
 
-        function showModal(siniestroId) {
+        /* function showModal(siniestroId) {
             $('#siniestroId').val(siniestroId);
             $('#theModal').modal('show');
-            $('#taller_modal').select2({
-                placeholder: "Seleccionar taller",
-                allowClear: true
-            });
-        }
+        } */
+
 
         function guardarDatos() {
             let formData = new FormData($('#formUpdateDate')[0]);
@@ -255,8 +261,8 @@
                 success: function(data) {
                     $('#formUpdateDate')[0].reset();
                     $('.error-message').hide();
-                    let oTable = $('#tabla-siniestros').DataTable();
-                    oTable.ajax.reload();
+                    let tableSiniestros = $('#tabla-siniestros').DataTable();
+                    tableSiniestros.ajax.reload();
                     $("#btnActualizar").attr("disabled", false);
                     $('#theModal').modal('hide');
                 },
@@ -264,7 +270,6 @@
                     if (xhr.status === 422) {
                         var errors = xhr.responseJSON.errors;
 
-                        // Mostrar los errores en tu interfaz de usuario
                         showErrors(errors);
                     }
                 }
@@ -292,30 +297,35 @@
             tabla.empty();
 
             let fechaInicial = data.fecha_inicial;
-            let fechaNueva = null;
-
-            let filaFechaInicial = '<tr>';
-            filaFechaInicial += '<td>' + fechaInicial + '</td>';
-            filaFechaInicial += '<td colspan="2"></td>'; // Dejar dos columnas vacías
-            filaFechaInicial += '</tr>';
-            tabla.append(filaFechaInicial);
-
-
-            data.bitacora.forEach(function(bitacora) {
+            for (let i = data.bitacora.length - 1; i >= 0; i--) {
+                let bitacora = data.bitacora[i];
                 let fila = '<tr>';
                 fila += '<td>' + fechaInicial + '</td>';
                 fila += '<td>' + bitacora.fecha_nueva + '</td>';
-                fila += '<td>' + bitacora.created_at + '</td>';
+
+
+                let createdAt = new Date(bitacora.created_at);
+                let formattedCreatedAt = createdAt.getFullYear() + '-' + padZero(createdAt.getMonth() + 1) + '-' + padZero(
+                    createdAt.getDate());
+                fila += '<td>' + formattedCreatedAt + '</td>';
+
+                fila += '<td>' + bitacora.comment + '</td>';
                 fila += '</tr>';
                 tabla.append(fila);
 
-
                 fechaInicial = bitacora.fecha_nueva;
-            });
-
+            }
 
             $('#theModal2').modal('show');
         }
+
+        function padZero(number) {
+            if (number < 10) {
+                return '0' + number;
+            }
+            return number;
+        }
+
 
 
         function cancel(modalId) {

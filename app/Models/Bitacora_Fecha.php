@@ -26,4 +26,5 @@ class Bitacora_Fecha extends Model
         return $this->belongsTo(Siniestro::class, 'siniestro_id');
     }
     
+    
 }

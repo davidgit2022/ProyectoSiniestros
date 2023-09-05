@@ -15,6 +15,7 @@
                             <th scope="col">Fecha Inicial</th>
                             <th scope="col">Fecha Nueva</th>
                             <th scope="col">Fecha Cambio</th>
+                            <th scope="col">Comentario</th>
                         </tr>
                     </thead>
                     <tbody>
