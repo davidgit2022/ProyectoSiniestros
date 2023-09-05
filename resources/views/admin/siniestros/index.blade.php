@@ -64,7 +64,6 @@
                                 <th>Placa</th>
                                 <th>Perito</th>
                                 <th>Taller</th>
-
                                 <th>Fecha entrega estimada</th>
                                 <th>CLIENTE</th>
                                 <th class="no-export">Acciones</th>
@@ -102,17 +101,11 @@
                 language: {
                     url: "{{ asset('datatables/Spanish.json') }}"
                 },
-
                 dom: 'Bfrtip',
-                buttons: [
-                    //'copyHtml5',
-                    {
-                        extend: 'excelHtml5',
-                        title: 'Reporte de Ordenes de Compra',
-                    },
-
-                ],
-
+                buttons: [{
+                    extend: 'excelHtml5',
+                    title: 'Reporte de Ordenes de Compra',
+                }, ],
                 ajax: "{{ route('siniestros.data') }}",
                 columns: [{
                         data: "created_at"
@@ -135,48 +128,32 @@
                     {
                         data: "NOMBRE"
                     },
-
                     {
                         data: "id",
                         render: function(data, type, row) {
-                            /* if (!row.fecha_respuesta) {
-                                return '<button class="btn btn-primary btn-recordar btn-sm" data-id="' + data + '">Recordar</button>';
-                            } else {
-                                return '';
-                            } */
                             var buttonsHtml = '';
 
-                            // Agregar botón "Recordar"
-                            if (!row.fecha_respuesta) {
-                                buttonsHtml +=
-                                    '<button class="btn btn-primary btn-recordar btn-sm" data-id="' +
-                                    data + '">Recordar</button>';
-                            }
-
-                            // Agregar botón "Editar"
                             buttonsHtml +=
                                 '<div class="btn-group">' +
-                                '<button type="button" class="btn btn-sm btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">' +
+                                '<button data-id="' + data +
+                                '" type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">' +
                                 'Action' +
                                 '</button>' +
                                 '<ul class="dropdown-menu">' +
-                                '<li><a class="dropdown-item" onClick="showModal()" href="javascript:void(0)">Actualizar fecha</a></li>' +
-                                '<li><a class="dropdown-item" onClick="showModal2()" href="javascript:void(0)">Ver cambios</a></li>' +
+                                '<li><a class="dropdown-item" onClick="showModal(' + data +
+                                ')" href="javascript:void(0)">Actualizar fecha</a></li>' +
+                                '<li><a class="dropdown-item" onClick="showModal2(' + data +
+                                ')" href="javascript:void(0)">Ver cambios</a></li>' +
                                 '</ul>' +
                                 '</div>';
-
-                            // Puedes agregar más botones aquí según tus necesidades
 
                             return buttonsHtml;
                         }
                     }
-
                 ],
-
                 lengthMenu: [10, 25, 50, 100],
                 pageLength: 10
             });
-
 
 
             $('input[name="filtro"], #placa, #siniestro,#taller,#perito,#fec_entresga_est').on('change keyup',
@@ -200,7 +177,6 @@
             });
 
 
-
             function recordarRegistro(id) {
 
                 var token = $('meta[name="csrf-token"]').attr('content');
@@ -222,70 +198,21 @@
                 });
             }
 
-
-
-            /* $('#btnActualizar').on('click', function() {
-
-                var id = $('#campoId').val();
-                var newDate = $('#newDate').val();
-                alert(id)
-                $.ajax({
-                    url: "{{ route('siniestros.actualizar-fecha') }}",
-                    method: 'POST',
-                    data: {
-                        id: id,
-                        newDate: newDate,
-                        _token: '{{ csrf_token() }}'
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                        
-                            $('#tabla-siniestros').DataTable().ajax
-                                .reload();
-                            $('#theModal').modal('hide'); 
-                        } else {
-                            alert('dfgfdg')
-                        }
-                    },
-                    error: function(error) {
-                        
-                    }
-                });
-                cancel();
-
-            }); */
-
-            $("#formUpdateDate").submit(function(e) {
-                e.preventDefault();
-
-                $.ajax({
-                    type: "POST",
-                    url: "{{ route('siniestros.actualizar-fecha') }}", 
-                    data: $(this).serialize(),
-                    success: function(response) {
-                        if (response.success) {
-                            
-                            $("#theModal").hide();
-                            alert(response.mensaje);
-                        } else {
-                            alert(response.mensaje);
-                        }
-                    },
-                    error: function() {
-                        alert('Error al actualizar el dato');
-                    }
-                });
-            });
-            
-
             $('#cancelButton').on('click', function(event) {
                 event.preventDefault();
                 cancel();
             });
 
+            $('#btnGuardar').on('click', function() {
+                guardarDatos();
+            });
+
+
+
         });
 
-        function showModal() {
+        function showModal(siniestroId) {
+            $('#siniestroId').val(siniestroId);
             $('#theModal').modal('show');
             $('#taller_modal').select2({
                 placeholder: "Seleccionar taller",
@@ -293,18 +220,78 @@
             });
         }
 
-        function cancel() {
-            $('#formUpdateDate')[0].reset();
-            $('#theModal').modal('hide');
-            return false;
+        function guardarDatos() {
+            let formData = new FormData($('#formUpdateDate')[0]);
+            let tallerId = $('#taller_modal').val();
+
+
+            formData.append('taller', tallerId)
+            $.ajax({
+                type: 'POST',
+                url: "{{ route('siniestros.crearBitacoraFecha') }}",
+                data: formData,
+                cache: false,
+                contentType: false,
+                processData: false,
+                success: function(data) {
+                    $('#formUpdateDate')[0].reset();
+                    $('.error-message').hide();
+                    let oTable = $('#tabla-siniestros').DataTable();
+                    oTable.ajax.reload();
+                    $("#btnActualizar").attr("disabled", false);
+                    $('#theModal').modal('hide');
+                },
+                error: function(xhr) {
+                    if (xhr.status === 422) {
+                        var errors = xhr.responseJSON.errors;
+                        showErrors(errors);
+                    }
+                }
+            });
         }
 
 
 
+        function showModal2(siniestroId) {
+            $.ajax({
+                url: '/obtener-datos-bitacora/' + siniestroId,
+                method: 'GET',
+                success: function(data) {
+                    mostrarDatos(data);
+                    $('#theModal2').modal('show');
+                },
+                error: function(xhr) {
+                    console.log(xhr);
+                }
+            });
+        }
+
+        function mostrarDatos(data) {
+
+            let tabla = $('#theModal2').find('table tbody');
+
+            tabla.empty();
+
+            data.forEach(function(bitacora) {
+                let fila = '<tr>';
+                fila += '<td>' + bitacora.fecha_anterior + '</td>';
+                fila += '<td>' + bitacora.fecha_nueva + '</td>';
+                fila += '<td>' + bitacora.fecha_confirmacion + '</td>';
+                fila += '</tr>';
+                tabla.append(fila);
+            });
+
+            // Abre el modal
+            $('#theModal2').modal('show');
+        }
 
 
-        function showModal2() {
-            $('#theModal2').modal('show')
+
+        function cancel() 
+        {
+            $('#formUpdateDate')[0].reset();
+            $('#theModal').modal('hide');
+            return false;
         }
     </script>
 @endsection

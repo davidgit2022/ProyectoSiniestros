@@ -58,7 +58,11 @@ Route::get('data-full', [SiniestrosController::class , 'index'])->name('data-ful
 Route::get('siniestros/data', [SiniestrosController::class , 'getData'])->name('siniestros.data');
 
 
-Route::post('siniestros/actualizar-fecha', [SiniestrosController::class, 'actualizarFecha'])->name('siniestros.actualizar-fecha');
+Route::post('siniestros/crear-bitacora-fecha', [SiniestrosController::class, 'crearBitacoraFecha'])->name('siniestros.crearBitacoraFecha');
+
+Route::get('/obtener-datos-bitacora/{siniestroId}',     [SiniestrosController::class,'obtenerDatosBitacora']);
+
+
 
 
 Route::middleware('auth')->group(function () {
