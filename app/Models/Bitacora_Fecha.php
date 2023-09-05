@@ -14,6 +14,11 @@ class Bitacora_Fecha extends Model
         'usuario_actualiza_id',
         'fecha_anterior',
         'fecha_nueva',
+        'is_postponement',
+        'comment',
+        'confirmacion_taller',
+        'fec_confirmacion',
+        'created_at'
     ];
 	
 	 public function siniestro()

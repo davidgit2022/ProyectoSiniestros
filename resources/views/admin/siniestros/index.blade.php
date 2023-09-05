@@ -137,7 +137,7 @@
                                 '<div class="btn-group">' +
                                 '<button data-id="' + data +
                                 '" type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">' +
-                                'Action' +
+                                'Acciones' +
                                 '</button>' +
                                 '<ul class="dropdown-menu">' +
                                 '<li><a class="dropdown-item" onClick="showModal(' + data +
@@ -198,18 +198,36 @@
                 });
             }
 
-            $('#cancelButton').on('click', function(event) {
-                event.preventDefault();
-                cancel();
+            $('#cancelButton').on('click', function() {
+                cancel('theModal');
+            });
+
+            $('#btnClose').on('click', function() {
+                cancel('theModal');
+            });
+
+            $('#btnClose2').on('click', function() {
+                cancel('theModal2');
             });
 
             $('#btnGuardar').on('click', function() {
                 guardarDatos();
             });
 
-
-
         });
+
+        function showErrors(errors) {
+            // Primero, oculta todos los mensajes de error
+            $('.error-message').hide();
+
+            for (let field in errors) {
+                let errorSpan = $('#' + field + 'Error');
+                errorSpan.text(errors[field][0]);
+                errorSpan.show();
+            }
+        }
+
+
 
         function showModal(siniestroId) {
             $('#siniestroId').val(siniestroId);
@@ -223,9 +241,10 @@
         function guardarDatos() {
             let formData = new FormData($('#formUpdateDate')[0]);
             let tallerId = $('#taller_modal').val();
+            let comment = $('#comment').val();
+            formData.append('taller', tallerId);
+            formData.append('comment', comment);
 
-
-            formData.append('taller', tallerId)
             $.ajax({
                 type: 'POST',
                 url: "{{ route('siniestros.crearBitacoraFecha') }}",
@@ -244,12 +263,14 @@
                 error: function(xhr) {
                     if (xhr.status === 422) {
                         var errors = xhr.responseJSON.errors;
+
+                        // Mostrar los errores en tu interfaz de usuario
                         showErrors(errors);
                     }
                 }
+
             });
         }
-
 
 
         function showModal2(siniestroId) {
@@ -267,31 +288,53 @@
         }
 
         function mostrarDatos(data) {
-
             let tabla = $('#theModal2').find('table tbody');
-
             tabla.empty();
 
-            data.forEach(function(bitacora) {
+            let fechaInicial = data.fecha_inicial;
+            let fechaNueva = null;
+
+            let filaFechaInicial = '<tr>';
+            filaFechaInicial += '<td>' + fechaInicial + '</td>';
+            filaFechaInicial += '<td colspan="2"></td>'; // Dejar dos columnas vacías
+            filaFechaInicial += '</tr>';
+            tabla.append(filaFechaInicial);
+
+
+            data.bitacora.forEach(function(bitacora) {
                 let fila = '<tr>';
-                fila += '<td>' + bitacora.fecha_anterior + '</td>';
+                fila += '<td>' + fechaInicial + '</td>';
                 fila += '<td>' + bitacora.fecha_nueva + '</td>';
-                fila += '<td>' + bitacora.fecha_confirmacion + '</td>';
+                fila += '<td>' + bitacora.created_at + '</td>';
                 fila += '</tr>';
                 tabla.append(fila);
+
+
+                fechaInicial = bitacora.fecha_nueva;
             });
 
-            // Abre el modal
+
             $('#theModal2').modal('show');
         }
 
 
+        function cancel(modalId) {
 
-        function cancel() 
-        {
+            $('#' + modalId).modal('hide');
+
+            $('#' + modalId + ' form')[0].reset();
+
+            $('#' + modalId + ' .error-message').hide();
+
+            return false;
+        }
+
+
+
+        /* function cancel() {
             $('#formUpdateDate')[0].reset();
             $('#theModal').modal('hide');
             return false;
-        }
+        } */
     </script>
 @endsection

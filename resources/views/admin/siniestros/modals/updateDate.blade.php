@@ -3,7 +3,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Actualizar Fecha</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" id="btnClose" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -21,14 +21,17 @@
                                 <option value="{{ $workshop->id }}">{{ $workshop->name }}</option>
                             @endforeach
                         </select>
+                        <span class="error-message text-danger" id="tallerError"></span>
                     </div>
                     <div class="mb-3">
                         <label for="newDate" class="form-label">Fecha Nueva</label>
                         <input type="date" class="form-control" name="newDate" id="newDate">
+                        <span class="error-message text-danger" id="newDateError"></span>
                     </div>
                     <div class="mb-3">
                         <label for="description" class="form-label">Comentarios</label>
                         <textarea class="form-control" name="comment" id="comment" rows="5"></textarea>
+                        <span class="error-message text-danger" id="commentError"></span>
                     </div>
 
                 </div>
@@ -40,5 +43,4 @@
         </div>
     </div>
 </div>
-{{-- <form action="javascript:void(0)" id="updateForm" name="EmployeeForm" class="form-horizontal">
-</form> --}}
+

@@ -7,6 +7,7 @@ use App\Models\Personal;
 use App\Models\Workshop;
 use App\Models\Siniestro;
 use Illuminate\Http\Request;
+use App\Models\Bitacora_Fecha;
 use App\Models\EnvioRecordatorio;
 use Illuminate\Support\Facades\DB;
 use App\Exports\RecordatoriosExport;
@@ -14,11 +15,11 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\Validator;
 use App\DataTables\Admin\SiniestroDataTable;
 use App\DataTables\Admin\CronJobTallerDataTable;
 use App\DataTables\Admin\EnvioRecordatorioDataTable;
 use App\DataTables\Admin\ConfirmacionTallerDataTable;
-use App\Models\Bitacora_Fecha;
 
 class SiniestrosController extends Controller
 {
@@ -87,37 +88,48 @@ class SiniestrosController extends Controller
 
     public function crearBitacoraFecha(Request $request)
     {
-        // Valida los datos del formulario si es necesario
-        /* $request->validate([
-        'taller' => 'required',
-        'newDate' => 'required|date',
-        'description' => 'nullable|string',
-    ]); */
 
         $siniestroId = $request->input('siniestroId');
+        $siniestro = Siniestro::find($siniestroId, ['id', 'FEC_ENTREGA_EST']);
+        
+        $fechaAnterior = $siniestro->FEC_ENTREGA_EST;
         $tallerId = $request->input('taller');
         $nuevaFecha = $request->input('newDate');
+        $comment = $request->input('comment');
 
 
-        $siniestro = Siniestro::find($siniestroId);
+        $validator = Validator::make($request->all(), [
+            'taller' => 'required',
+            'newDate' => "required|date|after:{$fechaAnterior}",
 
+        ], [
+            'taller.required' => 'El campo debe ser requerido ',
+            'newDate.required' => 'El campo debe ser requerido ',
+            'newDate.after' => 'La fecha nueva debe ser mayor que la fecha actual'
+        ]);
+    
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        
+        $siniestro->FEC_ENTREGA_EST = $nuevaFecha;
+        $siniestro->save();
         if (!$siniestro) {
             return response()->json(['error' => 'Siniestro no encontrado'], 404);
         }
+        
 
-        $siniestro->FEC_ENTREGA_EST = $nuevaFecha;
-        $siniestro->save();
-
-        $bitacoraFecha = Bitacora_Fecha::create([
+        $bitacoraFecha = Bitacora_Fecha::create([ 
 
             'siniestro_id' => $siniestroId,
             'usuario_actualiza_id' => $tallerId,
             'fecha_anterior' => $siniestro->FEC_ENTREGA_EST,
             'fecha_nueva' => $nuevaFecha,
-            'is_postponement' => 0,
-            'comment' => $request->input('comment'),
-            'confirmacion_taller' => 1,
-            'fec_confirmacion' => $nuevaFecha,
+            'is_postponement' => null,
+            'comment' => $comment,
+            'confirmacion_taller' => 0,
+            'fec_confirmacion' => null,
         ]);
 
         return Response()->json($bitacoraFecha);
@@ -127,6 +139,13 @@ class SiniestrosController extends Controller
     {
         $bitacoraDatos = Bitacora_Fecha::where('siniestro_id', $siniestroId)->get();
 
-        return response()->json($bitacoraDatos);
+        $siniestro = Siniestro::find($siniestroId, ['id', 'FEC_ENTREGA_EST']);
+
+        $datos = [
+            'fecha_inicial' => $siniestro->FEC_ENTREGA_EST,
+            'bitacora' => $bitacoraDatos,
+        ];
+
+        return response()->json($datos);
     }
 }
